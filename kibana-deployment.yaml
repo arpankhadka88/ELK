@@ -22,12 +22,19 @@ spec:
         - containerPort: 5601
         env:
           - name: ELASTICSEARCH_HOSTS
-            value: "http://elasticsearch:9200"  # Using HTTP (no SSL) to connect to Elasticsearch
+            value: "http://elasticsearch:9200"
           - name: SERVER_SSL_ENABLED
-            value: "false"  # Disable SSL for Kibana itself
+            value: "false"
           - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
-            value: "none"  # Disable SSL verification for Elasticsearch connection
-          
+            value: "none"
+        volumeMounts:
+        - name: kibana-storage
+          mountPath: /usr/share/kibana/data
+      volumes:
+      - name: kibana-storage
+        persistentVolumeClaim:
+          claimName: kibana-pvc
+
 ---
 apiVersion: v1
 kind: Service
@@ -42,4 +49,34 @@ spec:
   selector:
     app: kibana
   type: NodePort
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kibana-pvc
+  namespace: logging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kibana-pv
+  namespace: logging
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  hostPath:
+    path: /var/lib/rancher/k3s/storage/pvc-kibana  # Local path on the node
 

@@ -22,7 +22,7 @@ spec:
         - name: discovery.type
           value: single-node
         - name: xpack.security.enabled
-          value: "false"  # Enable security
+          value: "false"
         - name: xpack.security.transport.ssl.enabled
           value: "false"
         - name: ES_JAVA_OPTS
@@ -34,6 +34,13 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1"
+        volumeMounts:
+        - name: elasticsearch-storage
+          mountPath: /usr/share/elasticsearch/data
+      volumes:
+      - name: elasticsearch-storage
+        persistentVolumeClaim:
+          claimName: elasticsearch-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -47,4 +54,18 @@ spec:
   selector:
     app: elasticsearch
   type: ClusterIP
+
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-pvc
+  namespace: logging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
 
